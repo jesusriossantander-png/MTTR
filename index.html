@@ -174,7 +174,10 @@ footer{margin-top:26px;color:var(--ink-3);font-size:12.5px;line-height:1.6}
 </div>
 <div id="tooltip" role="status"></div>
 
-<script src="data.js"></script>
+<script>
+/* carga data.js con cache-busting: evita que la caché de Cloudflare sirva datos viejos */
+document.write('<script src="data.js?nc=' + Date.now() + '"><\/script>');
+</script>
 <script>
 "use strict";
 /* MTTR_DATA = {order:[tipos], months:{'YYYY-MM':{d:{tipo:[rep,repr,p0,p1,p2,mttr]},h:{...}}}, wip, wipTipos} */
