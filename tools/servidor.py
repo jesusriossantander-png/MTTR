@@ -14,7 +14,7 @@ RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PUERTO = 8747
 PLANILLA = ('https://docs.google.com/spreadsheets/d/'
             '1uH6TZzYi00e3KIPT4sZUh_1naR8pJGZx46FMEol_jho/export?format=xlsx')
-MIN_INTERVALO = 120  # segundos entre actualizaciones
+MIN_INTERVALO = 60  # segundos entre actualizaciones
 
 estado = {'ultima': 0.0, 'corriendo': False, 'lock': threading.Lock()}
 
@@ -68,12 +68,13 @@ class Manejador(http.server.SimpleHTTPRequestHandler):
                 return self.responder(429, {'ok': False, 'msg': 'Ya hay una actualización en curso.'})
             resto = MIN_INTERVALO - (time.time() - estado['ultima'])
             if resto > 0:
-                return self.responder(429, {'ok': False,
-                    'msg': f'Espera {int(resto)} s para volver a actualizar.'})
+                return self.responder(429, {'ok': False, 'espera': int(resto) + 1,
+                    'msg': 'Actualización disponible en unos segundos.'})
             estado['corriendo'] = True
         try:
             resultado = actualizar()
             estado['ultima'] = time.time()
+            resultado['espera'] = MIN_INTERVALO
             self.responder(200 if resultado['ok'] else 500, resultado)
         except Exception as e:
             self.responder(500, {'ok': False, 'msg': f'Error: {type(e).__name__}'})
