@@ -2,7 +2,7 @@
 
 Dashboard interactivo del tiempo medio de reparación (MTTR) del taller. Los indicadores se calculan desde la hoja **IMPRESION** de la planilla de seguimiento (Google Sheets), pero **solo se publican agregados** por mes, tipo de equipo, clase y prioridad — ningún registro individual (TAG, OT, descripciones, motivos) sale de la planilla.
 
-**Ver el dashboard:** https://jesusriossantander-png.github.io/MTTR/
+**Ver el dashboard:** https://mttr.esimsrldesarrollos.com.ar (túnel Cloudflare desde la PC del taller) · espejo: https://jesusriossantander-png.github.io/MTTR/
 
 ## Contenido
 
@@ -26,9 +26,14 @@ Dashboard interactivo del tiempo medio de reparación (MTTR) del taller. Los ind
 
 El workflow de GitHub Actions descarga la hoja IMPRESION a las 06:00 y 18:00 (hora Argentina), regenera `data.js` y publica solo si hay cambios. Requiere que la planilla siga compartida con enlace ("cualquiera con el enlace puede ver"). También se puede ejecutar a mano desde **Actions → Actualizar datos desde la planilla → Run workflow**.
 
-## Compartir por túnel de Cloudflare
+## Túnel de Cloudflare (mttr.esimsrldesarrollos.com.ar)
 
-Si el cliente no puede acceder a github.io, ejecutar `tunel.cmd` en esta carpeta: levanta un servidor local y lo publica en una URL `https://….trycloudflare.com` (cambia en cada ejecución; requiere `cloudflared` instalado y la PC encendida mientras se comparte).
+El túnel **esimpc** de esta PC publica `http://127.0.0.1:8747` como `mttr.esimsrldesarrollos.com.ar`. Requiere:
+
+1. El hostname agregado en Cloudflare Zero Trust → Networks → Tunnels → esimpc → *Public Hostname* (`mttr.esimsrldesarrollos.com.ar` → HTTP → `localhost:8747`). El túnel es administrado remotamente, por lo que la regla debe estar en el dashboard (el `config.yml` local no aplica).
+2. El servidor local corriendo: doble clic a `servidor-mttr.vbs`, o copiarlo a la carpeta `shell:startup` para que arranque con Windows.
+
+Alternativa sin dominio: `tunel.cmd` crea un túnel rápido `https://….trycloudflare.com` (URL distinta en cada ejecución).
 
 ## Metodología
 
