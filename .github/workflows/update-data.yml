@@ -18,19 +18,21 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Descargar hoja IMPRESION
+      - name: Descargar planilla completa (xlsx)
         run: |
           curl -sL --fail \
-            "https://docs.google.com/spreadsheets/d/1uH6TZzYi00e3KIPT4sZUh_1naR8pJGZx46FMEol_jho/gviz/tq?tqx=out:csv&sheet=IMPRESION" \
-            -o impresion.csv
-          test "$(wc -c < impresion.csv)" -gt 100000  # corta si la descarga vino vacía
+            "https://docs.google.com/spreadsheets/d/1uH6TZzYi00e3KIPT4sZUh_1naR8pJGZx46FMEol_jho/export?format=xlsx" \
+            -o planilla.xlsx
+          test "$(wc -c < planilla.xlsx)" -gt 300000  # corta si la descarga vino vacía
 
-      - name: Generar data.js
-        run: python tools/parse_mttr.py impresion.csv data.js
+      - name: Generar data.js desde la hoja MTTR
+        run: |
+          pip install --quiet openpyxl
+          python tools/parse_mttr.py planilla.xlsx data.js
 
       - name: Publicar si hay cambios
         run: |
-          rm -f impresion.csv
+          rm -f planilla.xlsx
           if git diff --quiet data.js; then
             echo "Sin cambios en los datos."
           else

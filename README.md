@@ -1,6 +1,6 @@
 # Dashboard MTTR — Taller de Reparaciones
 
-Dashboard interactivo del tiempo medio de reparación (MTTR) del taller. Los indicadores se calculan desde la hoja **IMPRESION** de la planilla de seguimiento (Google Sheets), pero **solo se publican agregados** por mes, tipo de equipo, clase y prioridad — ningún registro individual (TAG, OT, descripciones, motivos) sale de la planilla.
+Dashboard interactivo del tiempo medio de reparación (MTTR) del taller. Muestra **los mismos valores de la hoja MTTR** de la planilla (Reparaci., Represent., MTTR por prioridad y total, en días y horas), mes por mes, leídos directamente del Excel exportado — ningún registro individual (TAG, OT, descripciones, motivos) sale de la planilla.
 
 **Ver el dashboard:** https://mttr.esimsrldesarrollos.com.ar (túnel Cloudflare desde la PC del taller) · espejo: https://jesusriossantander-png.github.io/MTTR/
 
@@ -9,22 +9,20 @@ Dashboard interactivo del tiempo medio de reparación (MTTR) del taller. Los ind
 | Archivo | Descripción |
 |---|---|
 | `index.html` | Dashboard interactivo (HTML + SVG autocontenido, sin dependencias externas) |
-| `data.js` | Indicadores agregados (mes × tipo × clase × prioridad) |
-| `tools/parse_mttr.py` | Convierte el CSV de la hoja IMPRESION en `data.js` |
+| `data.js` | Valores de la hoja MTTR por mes y tipo de equipo (días y horas) |
+| `tools/parse_mttr.py` | Lee la hoja MTTR del xlsx exportado y genera `data.js` |
 | `.github/workflows/update-data.yml` | Actualización automática 2 veces por día desde la planilla |
 | `tunel.cmd` | Sirve el dashboard local y lo publica por túnel de Cloudflare |
 
 ## Qué muestra
 
-- **KPIs**: MTTR del período, reparaciones egresadas, % de cumplimiento de fecha programada, equipos en taller.
-- **Matriz mensual** de MTTR por tipo de equipo (como la hoja MTTR: meses en columnas, tipos en filas).
-- **Métrica seleccionable**: días de reparación u **horas de taller** (ajuste + mecanizado, registrado desde jun 2025).
-- MTTR mensual por clase (RG/RP), egresos por mes, MTTR por tipo y por prioridad, distribución de duraciones.
-- Filtros por período, métrica, tipo, clase y prioridad. Modo claro/oscuro.
+- **Selector de mes**: tabla del mes en el formato exacto de la hoja MTTR (Reparaci. | Reparaci. Represent | MTTR prioridad 0/1/2 | MTTR total), en **días** y en **horas** (desde ago 2025).
+- KPIs del mes, evolución mensual del MTTR (ene 2024 → hoy), matriz tipo × mes, MTTR por tipo y egresos por mes.
+- Modo claro/oscuro. Sin dependencias externas.
 
 ## Actualización automática
 
-El workflow de GitHub Actions descarga la hoja IMPRESION a las 06:00 y 18:00 (hora Argentina), regenera `data.js` y publica solo si hay cambios. Requiere que la planilla siga compartida con enlace ("cualquiera con el enlace puede ver"). También se puede ejecutar a mano desde **Actions → Actualizar datos desde la planilla → Run workflow**.
+El workflow de GitHub Actions descarga la planilla completa (xlsx) a las 06:00 y 18:00 (hora Argentina), regenera `data.js` y publica solo si hay cambios. Requiere que la planilla siga compartida con enlace ("cualquiera con el enlace puede ver"). También se puede ejecutar a mano desde **Actions → Actualizar datos desde la planilla → Run workflow**.
 
 ## Túnel de Cloudflare (mttr.esimsrldesarrollos.com.ar)
 
