@@ -442,6 +442,9 @@ for(let i=YEARS.length-1;i>=0;i--){
   const o=document.createElement('option'); o.value=YEARS[i]; o.textContent=`Año ${YEARS[i]} completo`;
   $('fPer').appendChild(o);
 }
+const sep=document.createElement('option');
+sep.disabled=true; sep.textContent='──────────────';
+$('fPer').appendChild(sep);
 for(let i=MONTHS.length-1;i>=0;i--){
   const o=document.createElement('option'); o.value=MONTHS[i]; o.textContent=mLabel(MONTHS[i]);
   $('fPer').appendChild(o);

@@ -30,8 +30,9 @@ def actualizar():
                             xlsx, os.path.join(RAIZ, 'data.js')],
                            capture_output=True, text=True, cwd=RAIZ, timeout=120)
         if r.returncode != 0:
-            return {'ok': False, 'msg': 'Error al procesar la planilla: ' + (r.stdout + r.stderr)[-300:]}
-        resumen = r.stdout.strip().splitlines()[-1] if r.stdout.strip() else 'OK'
+            print('parse_mttr fallo:', (r.stdout + r.stderr)[-500:])
+            return {'ok': False, 'msg': 'No se pudo procesar la planilla; revisar la hoja MTTR.'}
+        print(r.stdout.strip())
     cambio = subprocess.run(['git', 'diff', '--quiet', 'data.js'], cwd=RAIZ).returncode != 0
     push = ''
     if cambio:
@@ -43,8 +44,8 @@ def actualizar():
             push = ' Publicado también en GitHub.' if p.returncode == 0 else ' (No se pudo publicar a GitHub; el túnel ya está actualizado.)'
         except Exception:
             push = ' (No se pudo publicar a GitHub; el túnel ya está actualizado.)'
-        return {'ok': True, 'msg': 'Datos actualizados. ' + resumen + push}
-    return {'ok': True, 'msg': 'Sin cambios: la planilla no tiene datos nuevos. ' + resumen}
+        return {'ok': True, 'msg': 'Datos actualizados.' + push}
+    return {'ok': True, 'msg': 'Sin cambios: la planilla no tiene datos nuevos.'}
 
 class Manejador(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *a, **kw):
