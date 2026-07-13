@@ -184,7 +184,7 @@ footer{margin-top:26px;color:var(--ink-3);font-size:12.5px;line-height:1.6}
 </div>
 
 <footer>
-  <strong>Metodología.</strong> MTTR en días = promedio de días corridos entre la fecha de ingreso y la fecha de egreso real, sobre los equipos egresados en el período. MTTR en horas = promedio de horas de taller (ajuste + mecanizado) por reparación; se registra desde junio 2025. Clase RG = reparación general, RP = reparación parcial. Cumplimiento = % de egresos con fecha real ≤ fecha programada. El dashboard publica únicamente indicadores agregados por mes, tipo, clase y prioridad.
+  <strong>Metodología.</strong> Cada reparación se cuenta en el mes de su fecha de egreso real. MTTR en días = promedio de días corridos entre ingreso y egreso; MTTR en horas = promedio de horas de taller (ajuste + mecanizado), registrado desde junio 2025. Igual que en la hoja MTTR, el promedio considera solo las reparaciones <em>representativas</em>: las marcadas "NO" cuentan como egresadas pero no en el MTTR. Clase RG = reparación general, RP = parcial. Cumplimiento = % de egresos con fecha real ≤ fecha programada. El dashboard publica únicamente indicadores agregados por mes, tipo, clase y prioridad.
 </footer>
 </div>
 <div id="tooltip" role="status"></div>
@@ -192,8 +192,8 @@ footer{margin-top:26px;color:var(--ink-3);font-size:12.5px;line-height:1.6}
 <script src="data.js"></script>
 <script>
 "use strict";
-/* ---------- datos: grupos agregados [mes,tipo,clase,prio,n,nD,sD,nP,nF,nH,sH,bins] ---------- */
-const G = MTTR_DATA.groups.map(a=>({mes:a[0],tipo:a[1],clase:a[2],prio:a[3],n:a[4],nD:a[5],sD:a[6],nP:a[7],nF:a[8],nH:a[9],sH:a[10],bins:a[11]}));
+/* ---------- datos: grupos agregados [mes,tipo,clase,prio,n,nRep,nD,sD,nP,nF,nH,sH,bins] ---------- */
+const G = MTTR_DATA.groups.map(a=>({mes:a[0],tipo:a[1],clase:a[2],prio:a[3],n:a[4],nR:a[5],nD:a[6],sD:a[7],nP:a[8],nF:a[9],nH:a[10],sH:a[11],bins:a[12]}));
 const WIP = MTTR_DATA.wip.map(a=>({tipo:a[0],clase:a[1],prio:a[2],n:a[3]}));
 const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 const MIN_MES = G.reduce((m,g)=>g.mes<m?g.mes:m, '9999');
@@ -211,8 +211,8 @@ function fmt0(x){ return x==null ? '–' : Math.round(x).toLocaleString('es-AR')
 function fdate(s){ if(!s) return '–'; const [y,m,d]=s.split('-'); return `${d}/${m}/${y.slice(2)}`; }
 
 /* agregación */
-function agg(list){ const o={n:0,nD:0,sD:0,nP:0,nF:0,nH:0,sH:0,bins:Array(NBINS).fill(0)};
-  for(const g of list){ o.n+=g.n; o.nD+=g.nD; o.sD+=g.sD; o.nP+=g.nP; o.nF+=g.nF; o.nH+=g.nH; o.sH+=g.sH;
+function agg(list){ const o={n:0,nR:0,nD:0,sD:0,nP:0,nF:0,nH:0,sH:0,bins:Array(NBINS).fill(0)};
+  for(const g of list){ o.n+=g.n; o.nR+=g.nR; o.nD+=g.nD; o.sD+=g.sD; o.nP+=g.nP; o.nF+=g.nF; o.nH+=g.nH; o.sH+=g.sH;
     for(let i=0;i<NBINS;i++) o.bins[i]+=g.bins[i]; } return o; }
 function mval(a,met){ return met==='h' ? (a.nH? a.sH/a.nH : null) : (a.nD? a.sD/a.nD : null); }
 function mn(a,met){ return met==='h' ? a.nH : a.nD; }
@@ -426,6 +426,7 @@ function drawMatrix(months,rowsData,met,unit){
           ttTitle(box,`${row.name} · ${mLabel(mk)}`);
           ttRow(box,SEQ[ix],'MTTR',fmt1(v)+' '+unit);
           ttRow(box,null,'egresadas',a.n);
+          ttRow(box,null,'representativas',a.nR);
           if(met==='d'&&a.nH) ttRow(box,null,'promedio horas',fmt1(a.sH/a.nH)+' h');
           if(met==='h') ttRow(box,null,'promedio días',a.nD?fmt1(a.sD/a.nD)+' d':'–');
         }));
@@ -471,7 +472,7 @@ function render(){
   const aRG=agg(F.filter(g=>g.clase==='RG')), aRP=agg(F.filter(g=>g.clase==='RP'));
   $('kMttrN').textContent=`RG: ${fmt1(mval(aRG,met))} ${us} · RP: ${fmt1(mval(aRP,met))} ${us}`;
   $('kCount').textContent=tot.n.toLocaleString('es-AR');
-  $('kCountN').textContent=`${aRG.n} generales · ${aRP.n} parciales`;
+  $('kCountN').textContent=`${aRG.n} generales · ${aRP.n} parciales · ${tot.nR} representativas`;
   $('kOnTime').textContent = tot.nP? Math.round(100*tot.nF/tot.nP)+'%' : '–';
   $('kOnTimeN').textContent=`${tot.nF} de ${tot.nP} en fecha o antes`;
   $('kWip').textContent=wipF.reduce((a,w)=>a+w.n,0).toLocaleString('es-AR');
