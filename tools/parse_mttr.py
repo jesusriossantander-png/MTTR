@@ -1,13 +1,21 @@
 # -*- coding: utf-8 -*-
-"""Parse IMPRESION sheet CSV into clean JSON records for the MTTR dashboard."""
+"""Convierte el CSV exportado de la hoja IMPRESION en data.js para el dashboard.
+
+Solo publica AGREGADOS mensuales (mes x tipo x clase x prioridad); los registros
+individuales (TAG, OT, descripciones, motivos) nunca salen de este script.
+
+Uso:  python tools/parse_mttr.py impresion.csv [data.js]
+"""
 import csv, re, json, sys
-from datetime import date
+from datetime import date, timedelta
 
 MESES = {'ene':1,'feb':2,'mar':3,'abr':4,'may':5,'jun':6,'jul':7,'ago':8,
          'sep':9,'set':9,'oct':10,'nov':11,'dic':12}
+DESDE = date(2024, 1, 1)          # inicio de la serie publicada
+BINS = [(0,1),(2,5),(6,10),(11,20),(21,40),(41,80),(81,10**9)]
 
 def parse_date(s, ref=None):
-    """Parse d/m/yyyy, d/m/yy, d/m (no year), or 'd-mmm' Spanish. ref=(y,m,d) fallback for year."""
+    """Acepta d/m/aaaa, d/m/aa, d/m (sin año) y 'd-mmm' en español. ref da el año base."""
     s = (s or '').strip().lower()
     if not s or s in ('-', '--'):
         return None
@@ -20,7 +28,7 @@ def parse_date(s, ref=None):
     m = re.match(r'^(\d{1,2})/(\d{1,2})$', s)
     if m and ref:
         d, mo = int(m.group(1)), int(m.group(2))
-        y = ref.year + (1 if mo < ref.month - 6 else 0)  # rolled past year end
+        y = ref.year + (1 if mo < ref.month - 6 else 0)
         try: return date(y, mo, d)
         except ValueError: return None
     m = re.match(r'^(\d{1,2})\s*-\s*([a-zñ]{3,4})\.?$', s)
@@ -35,55 +43,79 @@ def parse_date(s, ref=None):
 def clean(s):
     return re.sub(r'\s+', ' ', (s or '').strip())
 
-rows = list(csv.reader(open(sys.argv[1], encoding='utf-8')))[1:]
-records, skipped = [], 0
-for r in rows:
-    if len(r) < 16:
-        skipped += 1; continue
-    tag = clean(r[0])
-    fing = parse_date(r[3])
-    if not tag and not fing:
-        skipped += 1; continue
-    if not fing:
-        skipped += 1; continue
-    prog = parse_date(r[5], ref=fing)
-    real = parse_date(r[6], ref=fing)
-    inicio = parse_date(r[7], ref=fing)
-    av = clean(r[8]).replace('%', '')
-    try: av = int(round(float(av)))
-    except ValueError: av = None
-    dias = (real - fing).days if real else None
-    if dias is not None and (dias < 0 or dias > 3000):
-        dias = None  # date typo
-    atraso = (real - prog).days if (real and prog) else None
-    if atraso is not None and abs(atraso) > 400:
-        atraso = None
-    rec = {
-        'tag': tag, 'ot': clean(r[1]), 'prio': clean(r[2]) or '-',
-        'fing': fing.isoformat(),
-        'prog': prog.isoformat() if prog else None,
-        'real': real.isoformat() if real else None,
-        'inicio': inicio.isoformat() if inicio else None,
-        'av': av,
-        'desc': clean(r[4]), 'motivo': clean(r[10]),
-        'tipo': clean(r[11]).upper() or 'S/D',
-        'clase': clean(r[12]).upper(),         # RG / RP
-        'estado': clean(r[13]), 'resp': clean(r[14]).upper(), 'area': clean(r[15]).upper(),
-        'dias': dias, 'atraso': atraso,
-        'mesReal': real.strftime('%Y-%m') if real else None,
-        'mesIng': fing.strftime('%Y-%m'),
-    }
-    if rec['clase'] not in ('RG', 'RP'):
-        rec['clase'] = 'S/D'
-    records.append(rec)
+def horas(s):
+    """HORAS TOTALES viene con coma decimal ('33,5')."""
+    s = (s or '').strip().replace(',', '.')
+    try:
+        v = float(s)
+        return v if 0 < v < 20000 else None
+    except ValueError:
+        return None
 
-records.sort(key=lambda x: x['fing'])
-json.dump(records, open('records.json', 'w', encoding='utf-8'), ensure_ascii=False)
-print('records:', len(records), 'skipped:', skipped)
-from collections import Counter
-c = Counter(x['mesReal'] for x in records if x['mesReal'])
-print('months with REAL:', sorted(c.items())[:5], '...', sorted(c.items())[-5:])
-print('with dias:', sum(1 for x in records if x['dias'] is not None))
-print('clase:', Counter(x['clase'] for x in records))
-print('tipo top:', Counter(x['tipo'] for x in records).most_common(15))
-print('avg dias overall:', round(sum(x['dias'] for x in records if x['dias'] is not None)/max(1,sum(1 for x in records if x['dias'] is not None)),1))
+def main():
+    src = sys.argv[1]
+    out = sys.argv[2] if len(sys.argv) > 2 else 'data.js'
+    rows = list(csv.reader(open(src, encoding='utf-8')))[1:]
+    hoy = date.today()
+    groups, wip = {}, {}
+    total, ultimo = 0, None
+    for r in rows:
+        if len(r) < 16:
+            continue
+        fing = parse_date(r[3])
+        if not fing:
+            continue
+        real = parse_date(r[6], ref=fing)
+        prog = parse_date(r[5], ref=fing)
+        tipo = clean(r[11]).upper() or 'S/D'
+        clase = clean(r[12]).upper()
+        if clase not in ('RG', 'RP'):
+            clase = 'S/D'
+        prio = clean(r[2]) or '-'
+        if prio not in ('0', '1', '2', '3'):
+            prio = '-'
+        if not real:
+            k = (tipo, clase, prio)
+            wip[k] = wip.get(k, 0) + 1
+            continue
+        if real < DESDE or real > hoy + timedelta(days=60):
+            continue  # histórico previo a la serie, o fecha con error de tipeo
+        total += 1
+        ultimo = max(ultimo, real) if ultimo else real
+        dias = (real - fing).days
+        if dias < 0 or dias > 3000:
+            dias = None
+        atraso = (real - prog).days if prog else None
+        if atraso is not None and abs(atraso) > 400:
+            atraso = None
+        h = horas(r[25]) if len(r) > 25 else None
+        k = (real.strftime('%Y-%m'), tipo, clase, prio)
+        g = groups.setdefault(k, [0, 0, 0, 0, 0, 0, 0.0, [0]*len(BINS)])
+        g[0] += 1                                   # n egresadas
+        if dias is not None:
+            g[1] += 1; g[2] += dias                 # n con días, suma de días
+            for i, (a, b) in enumerate(BINS):
+                if a <= dias <= b:
+                    g[7][i] += 1; break
+        if atraso is not None:
+            g[3] += 1                               # n con fecha programada
+            if atraso <= 0:
+                g[4] += 1                           # n en fecha
+        if h is not None:
+            g[5] += 1; g[6] += h                    # n con horas, suma de horas
+    if total < 300:
+        print(f'ERROR: solo {total} egresos parseados; se aborta para no perder datos.')
+        sys.exit(1)
+    data = {
+        # [mes, tipo, clase, prio, n, nDias, sumDias, nProg, nEnFecha, nHoras, sumHoras, bins]
+        'groups': [[k[0], k[1], k[2], k[3], v[0], v[1], v[2], v[3], v[4], v[5], round(v[6], 1), v[7]]
+                   for k, v in sorted(groups.items())],
+        'wip': [[k[0], k[1], k[2], v] for k, v in sorted(wip.items())],
+        'last': ultimo.isoformat(),
+    }
+    with open(out, 'w', encoding='utf-8') as f:
+        f.write('const MTTR_DATA=' + json.dumps(data, ensure_ascii=False, separators=(',', ':')) + ';')
+    print(f'OK: {total} egresos en {len(data["groups"])} grupos, {sum(wip.values())} en taller -> {out}')
+
+if __name__ == '__main__':
+    main()
