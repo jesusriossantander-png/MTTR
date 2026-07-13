@@ -36,14 +36,12 @@ h1{font-size:22px;font-weight:650;letter-spacing:-.01em}
 .sub{color:var(--ink-2);font-size:14px;margin-top:2px}
 #themeBtn{border:1px solid var(--border);background:var(--surface-1);color:var(--ink-2);border-radius:8px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}
 .filters{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}
-.filters label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ink-3)}
-.filters select{border:1px solid var(--border);background:var(--surface-1);color:var(--ink-1);border-radius:8px;padding:7px 10px;font:inherit;font-size:14px;min-width:150px}
+.filters select{border:1px solid var(--border);background:var(--surface-1);color:var(--ink-1);border-radius:8px;padding:8px 12px;font:inherit;font-size:14px;min-width:170px}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:14px}
 .tile{background:var(--surface-1);border:1px solid var(--border);border-radius:12px;padding:16px 18px}
 .tile .lbl{font-size:13px;color:var(--ink-2)}
 .tile .val{font-size:32px;font-weight:650;letter-spacing:-.02em;margin-top:2px}
 .tile .val small{font-size:15px;font-weight:500;color:var(--ink-2)}
-.tile .note{font-size:12px;color:var(--ink-3);margin-top:2px}
 .tile svg{display:block;margin-top:8px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .card{background:var(--surface-1);border:1px solid var(--border);border-radius:12px;padding:18px;min-width:0}
@@ -74,10 +72,9 @@ svg text{font-family:inherit}
 /* matriz heatmap */
 .mx{border-collapse:separate;border-spacing:2px;font-size:12px}
 .mx th{color:var(--ink-3);font-weight:500;padding:4px 6px;text-align:center;white-space:nowrap}
-.mx th.rowh{text-align:right;padding-right:10px}
+.mx th.rowh{text-align:right;padding-right:10px;position:sticky;left:0;background:var(--surface-1);z-index:2}
 .mx td{min-width:42px;height:26px;text-align:center;border-radius:5px;font-variant-numeric:tabular-nums;cursor:default}
 .mx td.empty{background:transparent;color:var(--ink-3)}
-.mx td.sel{outline:2px solid var(--ink-1)}
 .tblwrap{overflow-x:auto}
 footer{margin-top:26px;color:var(--ink-3);font-size:12.5px;line-height:1.6}
 @media (max-width:820px){.grid{grid-template-columns:1fr}}
@@ -88,76 +85,64 @@ footer{margin-top:26px;color:var(--ink-3);font-size:12.5px;line-height:1.6}
 <header>
   <div>
     <h1>Dashboard MTTR — Taller de Reparaciones</h1>
-    <div class="sub">Los mismos valores de la hoja MTTR, mes por mes · <span id="updated"></span></div>
+    <div class="sub">Los mismos valores de la hoja MTTR · <span id="updated"></span></div>
   </div>
   <button id="themeBtn" type="button">Modo oscuro</button>
 </header>
 
 <div class="filters">
-  <label>Mes
-    <select id="fMes"></select>
-  </label>
-  <label>Métrica de los gráficos
-    <select id="fMetrica">
-      <option value="d">Días de reparación</option>
-      <option value="h">Horas de taller</option>
-    </select>
-  </label>
+  <select id="fPer" aria-label="Período (mes o año)"></select>
 </div>
 
 <div class="kpis">
   <div class="tile">
-    <div class="lbl">MTTR del mes (días)</div>
+    <div class="lbl" id="kDiasL">MTTR (días)</div>
     <div class="val" id="kDias">–</div>
-    <div class="note">promedio ponderado por reparaciones representativas</div>
     <svg id="spark" width="100%" height="34" viewBox="0 0 180 34" preserveAspectRatio="none" aria-hidden="true"></svg>
   </div>
   <div class="tile">
-    <div class="lbl">MTTR del mes (horas de taller)</div>
+    <div class="lbl" id="kHorasL">MTTR (horas de taller)</div>
     <div class="val" id="kHoras">–</div>
-    <div class="note" id="kHorasN">se registra desde agosto 2025</div>
   </div>
   <div class="tile">
-    <div class="lbl">Reparaciones egresadas del mes</div>
+    <div class="lbl">Reparaciones egresadas</div>
     <div class="val" id="kRep">–</div>
-    <div class="note" id="kRepN"></div>
   </div>
   <div class="tile">
     <div class="lbl">En taller (sin egreso)</div>
     <div class="val" id="kWip">–</div>
-    <div class="note">estado actual de la planilla</div>
   </div>
 </div>
 
 <div class="grid">
   <div class="card full">
-    <h2 id="tD-titulo">MTTR del mes en DÍAS — formato hoja MTTR</h2>
-    <div class="sub2">Reparaciones generales con avance 100%; el promedio usa solo las representativas</div>
+    <h2 id="tD-titulo">MTTR en DÍAS — formato hoja MTTR</h2>
+    <div class="sub2" id="tD-sub">Reparaciones generales con avance 100%; el promedio usa solo las representativas</div>
     <div class="tblwrap"><table class="hoja" id="tablaDias"></table></div>
   </div>
 
   <div class="card full" id="cardHoras">
-    <h2 id="tH-titulo">MTTR del mes en HORAS de taller — formato hoja MTTR</h2>
-    <div class="sub2">Horas de ajuste + mecanizado por reparación</div>
+    <h2 id="tH-titulo">MTTR en HORAS de taller — formato hoja MTTR</h2>
+    <div class="sub2" id="tH-sub">Horas de ajuste + mecanizado por reparación</div>
     <div class="tblwrap"><table class="hoja" id="tablaHoras"></table></div>
   </div>
 
   <div class="card full">
-    <h2 id="hLinea">Evolución mensual del MTTR</h2>
-    <div class="sub2" id="sLinea">Promedio ponderado de todos los tipos de equipo; el punto marcado es el mes seleccionado</div>
+    <h2>Evolución mensual del MTTR (días)</h2>
+    <div class="sub2">Promedio ponderado de todos los tipos de equipo</div>
     <div id="chLine"></div>
   </div>
 
   <div class="card full">
-    <h2 id="hMatriz">MTTR mensual por tipo de equipo</h2>
-    <div class="sub2">Meses en columnas, tipos en filas — la columna recuadrada es el mes seleccionado</div>
+    <h2>MTTR mensual por tipo de equipo (días)</h2>
+    <div class="sub2">Meses en columnas, tipos en filas</div>
     <div class="tblwrap"><table class="mx" id="mxTable"></table></div>
     <div class="legend" id="legMx"></div>
   </div>
 
   <div class="card">
-    <h2 id="hTipo">MTTR por tipo — mes seleccionado</h2>
-    <div class="sub2">Solo tipos con reparaciones en el mes (n = representativas)</div>
+    <h2 id="hTipo">MTTR por tipo (días)</h2>
+    <div class="sub2">Solo tipos con reparaciones en el período (n = representativas)</div>
     <div id="chTipo"></div>
   </div>
 
@@ -169,7 +154,7 @@ footer{margin-top:26px;color:var(--ink-3);font-size:12.5px;line-height:1.6}
 </div>
 
 <footer>
-  <strong>Metodología.</strong> Los valores se leen directamente de la hoja <em>MTTR</em> de la planilla (misma celda, mismo número; acá redondeados a entero como los muestra la hoja). Criterio de la hoja: reparaciones <em>generales</em> (RG) con avance 100%, contadas en su mes de planilla; "Reparaci. Represent" excluye las marcadas NO y es la base del promedio MTTR por prioridad (0/1/2) y total. Las horas de taller (ajuste + mecanizado) se registran desde agosto 2025. "En taller" cuenta las filas de IMPRESION sin fecha de egreso. El dashboard no publica ningún dato de reparaciones individuales.
+  <strong>Metodología.</strong> Los valores mensuales se leen directamente de la hoja <em>MTTR</em> de la planilla (misma celda, mismo número; redondeados a entero como los muestra la hoja). Criterio de la hoja: reparaciones <em>generales</em> (RG) con avance 100%; "Reparaci. Represent" excluye las marcadas NO y es la base del promedio MTTR por prioridad (0/1/2) y total. Las horas de taller (ajuste + mecanizado) se registran desde agosto 2025. En la vista por año, los conteos son la suma de los meses y los MTTR el promedio ponderado por reparaciones representativas. "En taller" cuenta las filas de IMPRESION sin fecha de egreso. El dashboard no publica ningún dato de reparaciones individuales.
 </footer>
 </div>
 <div id="tooltip" role="status"></div>
@@ -183,6 +168,7 @@ document.write('<script src="data.js?nc=' + Date.now() + '"><\/script>');
 /* MTTR_DATA = {order:[tipos], months:{'YYYY-MM':{d:{tipo:[rep,repr,p0,p1,p2,mttr]},h:{...}}}, wip, wipTipos} */
 const ORDER = MTTR_DATA.order;
 const MONTHS = Object.keys(MTTR_DATA.months).sort();
+const YEARS = [...new Set(MONTHS.map(m=>m.slice(0,4)))].sort();
 const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const MESES_C = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 
@@ -194,19 +180,37 @@ function mShort(k){ const [y,m]=k.split('-'); return `${MESES_C[+m-1]} ${y.slice
 function fmt0(x){ return x==null ? '–' : Math.round(x).toLocaleString('es-AR'); }
 function fmt1(x){ return x==null ? '–' : x.toLocaleString('es-AR',{maximumFractionDigits:1,minimumFractionDigits:0}); }
 
-/* MTTR global ponderado por representativas del mes */
-function global(mes, met){
-  const md=(MTTR_DATA.months[mes]||{})[met]; if(!md) return null;
+/* ---------- período: 'YYYY' (año) o 'YYYY-MM' (mes) ---------- */
+function esAnio(p){ return p.length===4; }
+function mesesDe(p){ return esAnio(p) ? MONTHS.filter(m=>m.startsWith(p)) : [p]; }
+function perLabel(p){ return esAnio(p) ? `año ${p}` : mLabel(p); }
+
+/* datos del período: mes directo de la hoja; año = suma de conteos + promedio ponderado */
+function getData(p, met){
+  if(!esAnio(p)) return (MTTR_DATA.months[p]||{})[met] || null;
+  const out={}; let alguno=false;
+  for(const t of ORDER){
+    let rep=0, repr=0, w=[0,0,0,0], s=[0,0,0,0];  // p0,p1,p2,total
+    for(const m of mesesDe(p)){
+      const v=((MTTR_DATA.months[m]||{})[met]||{})[t];
+      if(!v) continue;
+      alguno=true; rep+=v[0]; repr+=v[1];
+      if(v[1]>0){ [2,3,4,5].forEach((ix,j)=>{ w[j]+=v[1]; s[j]+=v[1]*v[ix]; }); }
+    }
+    out[t]=[rep,repr, w[0]?s[0]/w[0]:0, w[1]?s[1]/w[1]:0, w[2]?s[2]/w[2]:0, w[3]?s[3]/w[3]:0];
+  }
+  return alguno? out : null;
+}
+function globalDe(md){
+  if(!md) return null;
   let w=0,s=0;
-  for(const t of ORDER){ const v=md[t]; if(!v) continue;
-    if(v[1]>0 && v[5]>0){ w+=v[1]; s+=v[1]*v[5]; } }
+  for(const t of ORDER){ const v=md[t]; if(v&&v[1]>0){ w+=v[1]; s+=v[1]*v[5]; } }
   return w? s/w : null;
 }
-function sumaRep(mes){
-  const md=(MTTR_DATA.months[mes]||{}).d; if(!md) return [0,0];
-  let a=0,b=0; for(const t of ORDER){ const v=md[t]; if(v){ a+=v[0]; b+=v[1]; } }
-  return [a,b];
-}
+function sumaRep(md){ let a=0,b=0;
+  if(md) for(const t of ORDER){ const v=md[t]; if(v){ a+=v[0]; b+=v[1]; } }
+  return [a,b]; }
+function globalMes(m){ return globalDe((MTTR_DATA.months[m]||{}).d||null); }
 
 /* ---------- tooltip ---------- */
 const tt=$('tooltip');
@@ -239,14 +243,13 @@ function roundTop(x,y,w,h,r){ if(h<=0) return `M${x} ${y}`; r=Math.min(r,w/2,h);
   return `M${x} ${y+h} V${y+r} Q${x} ${y} ${x+r} ${y} H${x+w-r} Q${x+w} ${y} ${x+w} ${y+r} V${y+h} Z`; }
 
 /* ---------- tabla formato hoja ---------- */
-function tablaHoja(tabla, mes, met){
-  const md=(MTTR_DATA.months[mes]||{})[met];
+function tablaHoja(tabla, md, etiqueta, met){
   tabla.textContent='';
   if(!md) return false;
   const u = met==='h' ? 'HORAS' : 'días';
   const heads=['Reparaci.','Reparaci. Represent',`MTTR - PRIORI 0 (${u})`,`MTTR - PRIORI 1 (${u})`,`MTTR - PRIORI 2 (${u})`,`MTTR (PRIO 0,1,2,3,-) (${u})`];
   const trh=document.createElement('tr');
-  const th0=document.createElement('th'); th0.className='mes'; th0.textContent=mLabel(mes); trh.appendChild(th0);
+  const th0=document.createElement('th'); th0.className='mes'; th0.textContent=etiqueta; trh.appendChild(th0);
   for(const h of heads){ const th=document.createElement('th'); th.textContent=h; trh.appendChild(th); }
   tabla.appendChild(trh);
   for(const t of ORDER){
@@ -261,10 +264,11 @@ function tablaHoja(tabla, mes, met){
 }
 
 /* ---------- línea evolución ---------- */
-function drawLine(mesSel, met){
+function drawLine(per){
   const W=1080,H=280, L=48,R=20,T=14,B=34, pw=W-L-R, ph=H-T-B;
   const svg=svgRoot($('chLine'),W,H);
-  const vals=MONTHS.map(m=>global(m,met));
+  const sel=new Set(mesesDe(per));
+  const vals=MONTHS.map(m=>globalMes(m));
   const nums=vals.filter(v=>v!=null);
   if(!nums.length) return;
   const sc=niceScale(Math.max(...nums)*1.1), ymax=sc.max;
@@ -281,8 +285,8 @@ function drawLine(mesSel, met){
   vals.forEach((v,i)=>{ if(v==null){pen=false;return;} d+=(pen?'L':'M')+X(i).toFixed(1)+' '+Y(v).toFixed(1); pen=true; });
   if(d) el('path',{d,fill:'none',stroke:CL.mono(),'stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'},svg);
   vals.forEach((v,i)=>{ if(v==null) return;
-    const selp = MONTHS[i]===mesSel;
-    el('circle',{cx:X(i),cy:Y(v),r:selp?6:4,fill:CL.mono(),stroke:CL.surface(),'stroke-width':2},svg);
+    el('circle',{cx:X(i),cy:Y(v),r:sel.has(MONTHS[i])?5.5:4,fill:CL.mono(),stroke:CL.surface(),'stroke-width':2,
+      opacity: sel.has(MONTHS[i])?1:.55},svg);
   });
   const cross=el('line',{y1:T,y2:T+ph,stroke:CL.axis(),'stroke-width':1,opacity:0},svg);
   const hit=el('rect',{x:L,y:T,width:pw,height:ph,fill:'transparent'},svg);
@@ -291,10 +295,10 @@ function drawLine(mesSel, met){
     const px=(ev.clientX-r.left)*sx;
     const i=Math.max(0,Math.min(MONTHS.length-1,Math.round((px-L)/(pw/Math.max(1,MONTHS.length-1)))));
     cross.setAttribute('x1',X(i)); cross.setAttribute('x2',X(i)); cross.setAttribute('opacity',1);
-    const [rep,repr]=sumaRep(MONTHS[i]);
+    const [rep,repr]=sumaRep((MTTR_DATA.months[MONTHS[i]]||{}).d||null);
     showTT(ev.clientX,ev.clientY,box=>{
       ttTitle(box,mLabel(MONTHS[i]));
-      ttRow(box,CL.mono(),'MTTR',vals[i]==null?'—':fmt1(vals[i])+(met==='h'?' h':' días'));
+      ttRow(box,CL.mono(),'MTTR',vals[i]==null?'—':fmt1(vals[i])+' días');
       ttRow(box,null,'egresadas · representativas',`${rep} · ${repr}`);
     });
   });
@@ -304,13 +308,12 @@ function drawLine(mesSel, met){
 /* ---------- matriz heatmap ---------- */
 const SEQ=['#cde2fb','#9ec5f4','#6da7ec','#3987e5','#256abf','#184f95'];
 const SEQ_INK=['#0b0b0b','#0b0b0b','#0b0b0b','#ffffff','#ffffff','#ffffff'];
-const TH_D=[5,10,20,40,80], TH_H=[25,50,100,200,400];
-function seqIdx(v,ths){ for(let i=0;i<ths.length;i++) if(v<=ths[i]) return i; return ths.length; }
+const TH_D=[5,10,20,40,80];
 
-function drawMatrix(mesSel, met){
+function drawMatrix(){
   const table=$('mxTable'); table.textContent='';
-  const ths= met==='h'?TH_H:TH_D, u=met==='h'?'h':'d';
-  const activos=ORDER.filter(t=>MONTHS.some(m=>{ const v=((MTTR_DATA.months[m]||{})[met]||{})[t]; return v&&v[0]>0; }));
+  const ths=TH_D, u='d';
+  const activos=ORDER.filter(t=>MONTHS.some(m=>{ const v=((MTTR_DATA.months[m]||{}).d||{})[t]; return v&&v[0]>0; }));
   const trh=document.createElement('tr');
   const th0=document.createElement('th'); th0.className='rowh'; th0.textContent='Tipo'; trh.appendChild(th0);
   for(const mk of MONTHS){ const th=document.createElement('th'); th.textContent=mShort(mk); trh.appendChild(th); }
@@ -320,8 +323,7 @@ function drawMatrix(mesSel, met){
     const th=document.createElement('th'); th.className='rowh'; th.textContent=t==='VARIOS'?'Varios':t; tr.appendChild(th);
     for(const mk of MONTHS){
       const td=document.createElement('td');
-      const v=((MTTR_DATA.months[mk]||{})[met]||{})[t];
-      if(mk===mesSel) td.classList.add('sel');
+      const v=((MTTR_DATA.months[mk]||{}).d||{})[t];
       if(!v || !v[0]){ td.classList.add('empty'); td.textContent='–'; }
       else if(!v[5]){ td.classList.add('empty'); td.textContent='0'; ttCell(td,t,mk,v,u,null); }
       else{
@@ -340,6 +342,7 @@ function drawMatrix(mesSel, met){
     const sw=document.createElement('span'); sw.className='swr'; sw.style.background=SEQ[i];
     k.appendChild(sw); k.append(`${lb} ${u}`); leg.appendChild(k); });
 }
+function seqIdx(v,ths){ for(let i=0;i<ths.length;i++) if(v<=ths[i]) return i; return ths.length; }
 function ttCell(td,t,mk,v,u,color){
   td.addEventListener('pointermove',ev=>showTT(ev.clientX,ev.clientY,box=>{
     ttTitle(box,`${t} · ${mLabel(mk)}`);
@@ -352,10 +355,10 @@ function ttCell(td,t,mk,v,u,color){
   td.addEventListener('pointerleave',hideTT);
 }
 
-/* ---------- barras por tipo (mes) ---------- */
-function drawHBars(container, rows, unit){
+/* ---------- barras por tipo ---------- */
+function drawHBars(container, rows){
   container.textContent='';
-  if(!rows.length){ const p=document.createElement('div'); p.className='sub2'; p.textContent='Sin reparaciones en el mes.'; container.appendChild(p); return; }
+  if(!rows.length){ const p=document.createElement('div'); p.className='sub2'; p.textContent='Sin reparaciones en el período.'; container.appendChild(p); return; }
   const W=520, rowH=30, L=86, R=92, T=6, B=26;
   const H=T+B+rows.length*rowH;
   const svg=svgRoot(container,W,H);
@@ -369,22 +372,23 @@ function drawHBars(container, rows, unit){
     el('text',{x:L-8,y:y+4,'text-anchor':'end',class:'tick'},svg).textContent=r.name;
     const bw=Math.max(2,pw*r.v/xmax);
     el('path',{d:`M${L} ${y-8} H${L+bw-4} Q${L+bw} ${y-8} ${L+bw} ${y-4} V${y+4} Q${L+bw} ${y+8} ${L+bw-4} ${y+8} H${L} Z`,fill:CL.mono()},svg);
-    const lab=el('text',{x:L+bw+7,y:y+4,class:'vlab-strong'},svg); lab.textContent=fmt1(r.v)+r.suf;
+    const lab=el('text',{x:L+bw+7,y:y+4,class:'vlab-strong'},svg); lab.textContent=fmt1(r.v)+' d';
     el('text',{x:L+bw+7+lab.getComputedTextLength()+5,y:y+4,class:'tick'},svg).textContent=`n=${r.n}`;
     const hit=el('rect',{x:0,y:y-rowH/2,width:W,height:rowH,fill:'transparent'},svg);
     hit.addEventListener('pointermove',ev=>showTT(ev.clientX,ev.clientY,box=>{
       ttTitle(box,r.name);
-      ttRow(box,CL.mono(),'MTTR',fmt1(r.v)+r.suf);
+      ttRow(box,CL.mono(),'MTTR',fmt1(r.v)+' días');
       ttRow(box,null,'representativas',r.n); }));
     hit.addEventListener('pointerleave',hideTT);
   });
 }
 
 /* ---------- columnas reparaciones por mes ---------- */
-function drawReps(mesSel){
+function drawReps(per){
   const W=520,H=230, L=44,R=10,T=16,B=32, pw=W-L-R, ph=H-T-B;
   const svg=svgRoot($('chReps'),W,H);
-  const vals=MONTHS.map(m=>sumaRep(m)[0]);
+  const sel=new Set(mesesDe(per));
+  const vals=MONTHS.map(m=>sumaRep((MTTR_DATA.months[m]||{}).d||null)[0]);
   const sc=niceScale(Math.max(1,...vals)*1.1), ymax=sc.max;
   const Y=v=>T+ph*(1-v/ymax);
   for(const v of sc.ticks){ const y=Y(v);
@@ -395,12 +399,12 @@ function drawReps(mesSel){
   const step=Math.max(1,Math.ceil(MONTHS.length/8));
   MONTHS.forEach((mk,i)=>{
     const cx=L+band*(i+.5);
-    el('path',{d:roundTop(cx-bw/2,Y(vals[i]),bw,ph*vals[i]/ymax,3),fill:CL.mono(),opacity:mk===mesSel?1:.55},svg);
+    el('path',{d:roundTop(cx-bw/2,Y(vals[i]),bw,ph*vals[i]/ymax,3),fill:CL.mono(),opacity:sel.has(mk)?1:.45},svg);
     if(i%step===0||i===MONTHS.length-1)
       el('text',{x:cx,y:H-10,'text-anchor':'middle',class:'tick'},svg).textContent=mShort(mk);
     const hit=el('rect',{x:cx-band/2,y:T,width:band,height:ph,fill:'transparent'},svg);
     hit.addEventListener('pointermove',ev=>showTT(ev.clientX,ev.clientY,box=>{
-      const [rep,repr]=sumaRep(mk);
+      const [rep,repr]=sumaRep((MTTR_DATA.months[mk]||{}).d||null);
       ttTitle(box,mLabel(mk));
       ttRow(box,CL.mono(),'egresadas',rep);
       ttRow(box,null,'representativas',repr); }));
@@ -408,9 +412,9 @@ function drawReps(mesSel){
   });
 }
 
-function sparkline(mesSel, met){
+function sparkline(per){
   const svg=$('spark'); svg.textContent='';
-  const vals=MONTHS.map(m=>global(m,met));
+  const vals=MONTHS.map(m=>globalMes(m));
   const vs=vals.filter(v=>v!=null); if(vs.length<2) return;
   const W=180,H=34,P=3, mx=Math.max(...vs), mn=Math.min(...vs);
   const X=i=>P+(W-2*P)*i/(vals.length-1);
@@ -418,54 +422,65 @@ function sparkline(mesSel, met){
   let d='',pen=false;
   vals.forEach((v,i)=>{ if(v==null){pen=false;return;} d+=(pen?'L':'M')+X(i).toFixed(1)+' '+Y(v).toFixed(1); pen=true; });
   el('path',{d,fill:'none',stroke:CL.axis(),'stroke-width':2,'stroke-linecap':'round','stroke-linejoin':'round'},svg);
-  const i=MONTHS.indexOf(mesSel);
-  if(i>=0&&vals[i]!=null) el('circle',{cx:X(i),cy:Y(vals[i]),r:3.5,fill:CL.mono(),stroke:CL.surface(),'stroke-width':2},svg);
+  if(!esAnio(per)){
+    const i=MONTHS.indexOf(per);
+    if(i>=0&&vals[i]!=null) el('circle',{cx:X(i),cy:Y(vals[i]),r:3.5,fill:CL.mono(),stroke:CL.surface(),'stroke-width':2},svg);
+  }
 }
 
 /* ---------- render ---------- */
 function render(){
-  const mes=$('fMes').value, met=$('fMetrica').value;
-  const uTxt = met==='h' ? 'horas de taller' : 'días';
+  const per=$('fPer').value;
+  const lbl=perLabel(per), lblCap=lbl.replace(/^./,c=>c.toUpperCase());
+  const dD=getData(per,'d'), dH=getData(per,'h');
 
-  const gd=global(mes,'d'), gh=global(mes,'h');
+  $('kDiasL').textContent=`MTTR ${lbl} (días)`;
+  $('kHorasL').textContent=`MTTR ${lbl} (horas de taller)`;
+  const gd=globalDe(dD), gh=globalDe(dH);
   $('kDias').textContent=''; $('kDias').append(fmt1(gd));
   const s1=document.createElement('small'); s1.textContent=' días'; $('kDias').appendChild(s1);
   $('kHoras').textContent=''; $('kHoras').append(gh==null?'–':fmt1(gh));
-  const s2=document.createElement('small'); s2.textContent=gh==null?'':' h'; $('kHoras').appendChild(s2);
-  $('kHorasN').textContent = gh==null ? 'sin registro de horas en este mes' : 'promedio ponderado por representativas';
-  const [rep,repr]=sumaRep(mes);
-  $('kRep').textContent=rep.toLocaleString('es-AR');
-  $('kRepN').textContent=`${repr} representativas (base del MTTR)`;
+  if(gh!=null){ const s2=document.createElement('small'); s2.textContent=' h'; $('kHoras').appendChild(s2); }
+  const [rep,repr]=sumaRep(dD);
+  $('kRep').textContent=''; $('kRep').append(rep.toLocaleString('es-AR'));
+  const s3=document.createElement('small'); s3.textContent=` · ${repr} repr.`; $('kRep').appendChild(s3);
   $('kWip').textContent=MTTR_DATA.wip.toLocaleString('es-AR');
 
-  $('tD-titulo').textContent=`MTTR de ${mLabel(mes)} en DÍAS — formato hoja MTTR`;
-  tablaHoja($('tablaDias'), mes, 'd');
-  const hayHoras=tablaHoja($('tablaHoras'), mes, 'h');
-  $('tH-titulo').textContent=`MTTR de ${mLabel(mes)} en HORAS de taller — formato hoja MTTR`;
+  $('tD-titulo').textContent=`MTTR de ${lbl} en DÍAS — formato hoja MTTR`;
+  $('tD-sub').textContent = esAnio(per)
+    ? 'Acumulado del año: conteos sumados; MTTR = promedio ponderado por representativas'
+    : 'Reparaciones generales con avance 100%; el promedio usa solo las representativas';
+  tablaHoja($('tablaDias'), dD, lblCap, 'd');
+  const hayHoras=tablaHoja($('tablaHoras'), dH, lblCap, 'h');
+  $('tH-titulo').textContent=`MTTR de ${lbl} en HORAS de taller — formato hoja MTTR`;
+  $('tH-sub').textContent = esAnio(per)
+    ? 'Acumulado de los meses con horas registradas (desde agosto 2025)'
+    : 'Horas de ajuste + mecanizado por reparación';
   $('cardHoras').style.display = hayHoras ? '' : 'none';
 
-  $('hLinea').textContent=`Evolución mensual del MTTR (${uTxt})`;
-  drawLine(mes,met);
-  sparkline(mes,'d');
-  $('hMatriz').textContent=`MTTR mensual por tipo de equipo (${uTxt})`;
-  drawMatrix(mes,met);
+  drawLine(per);
+  sparkline(per);
 
-  const md=(MTTR_DATA.months[mes]||{})[met]||{};
-  const rows=ORDER.filter(t=>md[t]&&md[t][0]>0&&md[t][5]>0)
-    .map(t=>({name:t==='VARIOS'?'Varios':t,v:md[t][5],n:md[t][1],suf:met==='h'?' h':' d'}))
+  const rows=ORDER.filter(t=>dD&&dD[t]&&dD[t][0]>0&&dD[t][5]>0)
+    .map(t=>({name:t==='VARIOS'?'Varios':t,v:dD[t][5],n:Math.round(dD[t][1])}))
     .sort((a,b)=>b.v-a.v);
-  $('hTipo').textContent=`MTTR por tipo (${uTxt}) — ${mLabel(mes)}`;
+  $('hTipo').textContent=`MTTR por tipo (días) — ${lbl}`;
   drawHBars($('chTipo'),rows);
-  drawReps(mes);
+  drawReps(per);
 }
 
 /* ---------- init ---------- */
+for(let i=YEARS.length-1;i>=0;i--){
+  const o=document.createElement('option'); o.value=YEARS[i]; o.textContent=`Año ${YEARS[i]} completo`;
+  $('fPer').appendChild(o);
+}
 for(let i=MONTHS.length-1;i>=0;i--){
   const o=document.createElement('option'); o.value=MONTHS[i]; o.textContent=mLabel(MONTHS[i]);
-  $('fMes').appendChild(o);
+  $('fPer').appendChild(o);
 }
-$('fMes').value=MONTHS[MONTHS.length-1];
-$('updated').textContent=`Datos: ${mLabel(MONTHS[0]).replace(/^./,c=>c.toUpperCase())} → ${mLabel(MONTHS[MONTHS.length-1])} · En taller: ${MTTR_DATA.wip}`;
+$('fPer').value=MONTHS[MONTHS.length-1];
+$('updated').textContent=`Datos: ${mLabel(MONTHS[0])} → ${mLabel(MONTHS[MONTHS.length-1])} · En taller: ${MTTR_DATA.wip}`;
+drawMatrix();
 
 function applyThemeBtn(){
   const t=document.documentElement.dataset.theme ||
@@ -478,14 +493,14 @@ $('themeBtn').addEventListener('click',()=>{
   const next=cur==='dark'?'light':'dark';
   document.documentElement.dataset.theme=next;
   try{ localStorage.setItem('mttr-theme',next); }catch(e){}
-  applyThemeBtn(); render();
+  applyThemeBtn(); drawMatrix(); render();
 });
 const qTheme=new URLSearchParams(location.search).get('theme');
 if(qTheme==='light'||qTheme==='dark') document.documentElement.dataset.theme=qTheme;
 else try{ const saved=localStorage.getItem('mttr-theme'); if(saved) document.documentElement.dataset.theme=saved; }catch(e){}
 applyThemeBtn();
 
-for(const id of ['fMes','fMetrica']) $(id).addEventListener('change',render);
+$('fPer').addEventListener('change',render);
 render();
 </script>
 </body>
