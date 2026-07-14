@@ -60,6 +60,14 @@ h1{font-size:21px;font-weight:650;letter-spacing:-.01em;line-height:1.25}
 .card.full{grid-column:1 / -1}
 .card h2{font-size:15px;font-weight:650;letter-spacing:-.005em}
 .card .sub2{font-size:12.5px;color:var(--ink-3);margin:2px 0 12px}
+.card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.card-head h2{margin:0}
+.card-head .sub2{margin:2px 0 0}
+.acciones{display:flex;gap:8px;flex:none}
+.btn-exp{border:1px solid var(--border);background:var(--surface-1);color:var(--ink-2);border-radius:8px;
+  padding:7px 12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;box-shadow:var(--sombra)}
+.btn-exp:hover{color:var(--ink-1)}
+.btn-exp.ok{color:var(--verde-ink);border-color:var(--verde);background:var(--verde)}
 .legend{display:flex;gap:16px;font-size:12.5px;color:var(--ink-2);margin:8px 0 0;flex-wrap:wrap}
 .legend .k{display:inline-flex;align-items:center;gap:6px}
 .legend .swr{width:11px;height:11px;border-radius:3px;display:inline-block}
@@ -113,14 +121,30 @@ footer{margin-top:28px;padding-top:16px;border-top:1px solid var(--grid);color:v
 
 <div class="grid">
   <div class="card full">
-    <h2 id="tD-titulo">MTTR en DÍAS — formato hoja MTTR</h2>
-    <div class="sub2" id="tD-sub">Reparaciones generales con avance 100%; el promedio usa solo las representativas</div>
+    <div class="card-head">
+      <div>
+        <h2 id="tD-titulo">MTTR en DÍAS — formato hoja MTTR</h2>
+        <div class="sub2" id="tD-sub">Reparaciones generales con avance 100%; el promedio usa solo las representativas</div>
+      </div>
+      <div class="acciones">
+        <button class="btn-exp" type="button" id="copD" title="Copia la tabla para pegar en Excel o SharePoint">⧉ Copiar tabla</button>
+        <button class="btn-exp" type="button" id="expD" title="Descarga la tabla como archivo de Excel">⬇ Descargar Excel</button>
+      </div>
+    </div>
     <div class="tblwrap"><table class="hoja" id="tablaDias"></table></div>
   </div>
 
   <div class="card full" id="cardHoras">
-    <h2 id="tH-titulo">MTTR en HORAS de taller — formato hoja MTTR</h2>
-    <div class="sub2" id="tH-sub">Horas de ajuste + mecanizado por reparación</div>
+    <div class="card-head">
+      <div>
+        <h2 id="tH-titulo">MTTR en HORAS de taller — formato hoja MTTR</h2>
+        <div class="sub2" id="tH-sub">Horas de ajuste + mecanizado por reparación</div>
+      </div>
+      <div class="acciones">
+        <button class="btn-exp" type="button" id="copH" title="Copia la tabla para pegar en Excel o SharePoint">⧉ Copiar tabla</button>
+        <button class="btn-exp" type="button" id="expH" title="Descarga la tabla como archivo de Excel">⬇ Descargar Excel</button>
+      </div>
+    </div>
     <div class="tblwrap"><table class="hoja" id="tablaHoras"></table></div>
   </div>
 
@@ -258,6 +282,66 @@ function tablaHoja(tabla, md, etiqueta, met){
     tabla.appendChild(tr);
   }
   return true;
+}
+
+/* ---------- exportar / copiar tabla formato hoja MTTR ---------- */
+function matrizHoja(per, met){
+  const md = getData(per, met);
+  if(!md) return null;
+  const u = met==='h' ? 'HORAS' : 'días';
+  const etiqueta = perLabel(per).replace(/^./,c=>c.toUpperCase());
+  const heads=[etiqueta,'Reparaci.','Reparaci. Represent',
+    `MTTR - PRIORI 0 (${u})`,`MTTR - PRIORI 1 (${u})`,`MTTR - PRIORI 2 (${u})`,`MTTR (PRIO 0,1,2,3,-) (${u})`];
+  const filas=[];
+  for(const t of ORDER){
+    const v=md[t]||[0,0,0,0,0,0];
+    filas.push([ t==='VARIOS'?'Varios':t, ...v.map(x=>Math.round(x)) ]);
+  }
+  return {heads, filas};
+}
+function slugPer(per){
+  const base = esAnio(per) ? per : perLabel(per);
+  return base.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'_');
+}
+function descargarBlob(blob, nombre){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=nombre;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },0);
+}
+function descargarExcel(per, met){
+  const m=matrizHoja(per,met); if(!m) return;
+  const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  let cuerpo='<tr>'+m.heads.map((h,i)=>
+    `<th style="background:${i===0?'#ffe94d':'#e9ecef'};border:1px solid #b7bdb7;padding:5px 9px;font-weight:bold;text-align:${i===0?'left':'center'}">${esc(h)}</th>`
+  ).join('')+'</tr>';
+  for(const row of m.filas){
+    cuerpo+='<tr>'+row.map((x,i)=>{
+      if(i===0) return `<td style="border:1px solid #d7dad7;padding:5px 9px;font-weight:bold">${esc(x)}</td>`;
+      const pos=Number(x)>0;
+      return `<td style="border:1px solid #d7dad7;padding:5px 9px;text-align:center;${pos?'background:#c6efce;color:#1e5a28;font-weight:bold':''}">${esc(x)}</td>`;
+    }).join('')+'</tr>';
+  }
+  const html='<html><head><meta charset="utf-8"></head><body>'+
+    `<table style="border-collapse:collapse;font-family:Segoe UI,Arial,sans-serif;font-size:12px">${cuerpo}</table>`+
+    '</body></html>';
+  const blob=new Blob(['\ufeff'+html],{type:'application/vnd.ms-excel'});
+  descargarBlob(blob, `MTTR_${slugPer(per)}_${met==='h'?'horas':'dias'}.xls`);
+}
+async function copiarTabla(per, met, btn){
+  const m=matrizHoja(per,met); if(!m) return;
+  const txt=[m.heads.join('\t'), ...m.filas.map(r=>r.join('\t'))].join('\n');
+  const ok=()=>{ const prev=btn.textContent; btn.textContent='✓ Copiado'; btn.classList.add('ok');
+    setTimeout(()=>{ btn.textContent=prev; btn.classList.remove('ok'); },1500); };
+  try{
+    await navigator.clipboard.writeText(txt); ok();
+  }catch(e){
+    const ta=document.createElement('textarea'); ta.value=txt;
+    ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    try{ document.execCommand('copy'); ok(); }catch(_){}
+    ta.remove();
+  }
 }
 
 /* ---------- línea evolución ---------- */
@@ -473,6 +557,12 @@ applyThemeBtn();
 
 $('fPer').addEventListener('change',render);
 render();
+
+/* ---------- botones Copiar / Descargar Excel de las tablas ---------- */
+$('copD').addEventListener('click',e=>copiarTabla($('fPer').value,'d',e.currentTarget));
+$('expD').addEventListener('click',()=>descargarExcel($('fPer').value,'d'));
+$('copH').addEventListener('click',e=>copiarTabla($('fPer').value,'h',e.currentTarget));
+$('expH').addEventListener('click',()=>descargarExcel($('fPer').value,'h'));
 
 /* ---------- botón Actualizar: verde = disponible, gris = cuenta regresiva ---------- */
 const TXT_BTN='⟳ Actualizar datos';
