@@ -1,0 +1,11 @@
+# La planilla completa nunca va al repo (contiene datos individuales)
+*.xlsx
+records.json
+
+# Credenciales locales (nunca subirlas)
+service-account.json
+clave-actualizar.txt
+
+# Temporales
+__pycache__/
+*.pyc

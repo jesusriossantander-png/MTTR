@@ -579,13 +579,30 @@ function cooldown(seg){
     else b.textContent=`Disponible en ${resta} s`;
   },1000);
 }
+function pedirClave(forzar){
+  let c='';
+  try{ c=localStorage.getItem('mttr-clave')||''; }catch(e){}
+  if(!c||forzar){
+    c=(prompt('Clave de actualización:')||'').trim();
+    if(c) try{ localStorage.setItem('mttr-clave',c); }catch(e){}
+  }
+  return c;
+}
 $('btnAct').addEventListener('click', async ()=>{
   const b=$('btnAct'), m=$('actMsg');
+  const clave=pedirClave(false);
+  if(!clave){ m.textContent='Actualización cancelada: hace falta la clave.'; return; }
   b.disabled=true; b.textContent='Actualizando…';
   m.textContent='Bajando la planilla y recalculando…';
   try{
-    const r=await fetch('actualizar',{method:'POST'});
+    const r=await fetch('actualizar',{method:'POST',headers:{'X-Clave':clave}});
     const j=await r.json();
+    if(r.status===401){
+      try{ localStorage.removeItem('mttr-clave'); }catch(e){}
+      m.textContent='Clave incorrecta. Volvé a intentar.';
+      b.disabled=false; b.textContent=TXT_BTN;
+      return;
+    }
     m.textContent=j.msg||'';
     if(j.ok && /datos actualizados/i.test(j.msg||'')){
       m.textContent='Datos actualizados. Recargando…';

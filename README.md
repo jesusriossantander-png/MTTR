@@ -22,7 +22,15 @@ Dashboard interactivo del tiempo medio de reparación (MTTR) del taller. Muestra
 
 ## Actualización automática
 
-El workflow de GitHub Actions descarga la planilla completa (xlsx) a las 06:00 y 18:00 (hora Argentina), regenera `data.js` y publica solo si hay cambios. Requiere que la planilla siga compartida con enlace ("cualquiera con el enlace puede ver"). También se puede ejecutar a mano desde **Actions → Actualizar datos desde la planilla → Run workflow**.
+El workflow de GitHub Actions descarga la planilla a las 06:00 y 18:00 (hora Argentina), regenera `data.js` y publica solo si hay cambios. También se puede ejecutar a mano desde **Actions → Run workflow**, o con el botón **⟳ Actualizar datos** del dashboard (protegido por clave; requiere la PC del taller encendida).
+
+**Acceso a la planilla:** si existe una credencial de cuenta de servicio de Google (secret `GOOGLE_SERVICE_ACCOUNT_JSON` en Actions, o `service-account.json` en la PC), la descarga es autenticada y la planilla puede estar restringida. Sin credencial, cae al enlace público de exportación.
+
+## Seguridad
+
+- El endpoint `/actualizar` exige la clave de `clave-actualizar.txt` (header `X-Clave`); el servidor local solo sirve `index.html`, `data.js` y el logo — nunca `.git/` ni el código.
+- `.gitignore` impide subir la planilla o credenciales al repo.
+- `data.js` contiene únicamente los agregados de la hoja MTTR; ningún registro individual sale de la planilla.
 
 ## Túnel de Cloudflare (mttr.esimsrldesarrollos.com.ar)
 

@@ -18,17 +18,20 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Descargar planilla completa (xlsx)
+      - name: Descargar planilla (privada con service account; pública si no hay secret)
+        env:
+          SA_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
         run: |
-          curl -sL --fail \
-            "https://docs.google.com/spreadsheets/d/1uH6TZzYi00e3KIPT4sZUh_1naR8pJGZx46FMEol_jho/export?format=xlsx" \
-            -o planilla.xlsx
+          pip install --quiet openpyxl google-auth requests
+          if [ -n "$SA_JSON" ]; then
+            printf '%s' "$SA_JSON" > service-account.json
+          fi
+          python tools/descargar_planilla.py planilla.xlsx
+          rm -f service-account.json
           test "$(wc -c < planilla.xlsx)" -gt 300000  # corta si la descarga vino vacía
 
       - name: Generar data.js desde la hoja MTTR
-        run: |
-          pip install --quiet openpyxl
-          python tools/parse_mttr.py planilla.xlsx data.js
+        run: python tools/parse_mttr.py planilla.xlsx data.js
 
       - name: Publicar si hay cambios
         run: |
