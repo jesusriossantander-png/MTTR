@@ -28,7 +28,7 @@ jobs:
           fi
           python tools/descargar_planilla.py planilla.xlsx
           rm -f service-account.json
-          test "$(wc -c < planilla.xlsx)" -gt 300000  # corta si la descarga vino vacía
+          test "$(wc -c < planilla.xlsx)" -gt 50000  # corta si la descarga vino vacía (la espejo pesa ~130 KB)
 
       - name: Generar data.js desde la hoja MTTR
         run: python tools/parse_mttr.py planilla.xlsx data.js

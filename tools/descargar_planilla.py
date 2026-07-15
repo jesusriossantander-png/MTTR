@@ -1,19 +1,23 @@
 # -*- coding: utf-8 -*-
-"""Descarga la planilla como xlsx.
+"""Descarga la planilla ESPEJO (solo la hoja MTTR, agregados) como xlsx.
+
+SHEET_ID apunta a la planilla espejo: trae únicamente la hoja MTTR por
+IMPORTRANGE (sin TAG, OT ni registros individuales). El libro fax completo
+NO se comparte públicamente.
 
 Si existe una credencial de cuenta de servicio de Google (archivo
 service-account.json junto al repo, o la ruta en la variable de entorno
 GOOGLE_APPLICATION_CREDENTIALS), descarga AUTENTICADO vía la API de Drive:
-la planilla puede estar restringida (sin enlace público).
+la espejo puede estar restringida (sin enlace público).
 
 Si no hay credencial, cae al enlace público de exportación (requiere que la
-planilla esté compartida como "cualquiera con el enlace puede ver").
+espejo esté compartida como "cualquiera con el enlace puede ver").
 
 Uso:  python tools/descargar_planilla.py destino.xlsx
 """
 import os, sys, urllib.request
 
-SHEET_ID = '1uH6TZzYi00e3KIPT4sZUh_1naR8pJGZx46FMEol_jho'
+SHEET_ID = '1FnAYUjM0lWWtFfuW7e2rJfnUl72QM6ctx2I3ZAWV8Dg'  # planilla ESPEJO (solo hoja MTTR)
 MIME_XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -50,7 +54,7 @@ if __name__ == '__main__':
     destino = sys.argv[1] if len(sys.argv) > 1 else 'planilla.xlsx'
     modo = descargar(destino)
     kb = os.path.getsize(destino) // 1024
-    if kb < 300:
+    if kb < 50:  # la espejo pesa ~130 KB; la página de login de Google, ~9 KB
         print(f'ERROR: descarga incompleta ({kb} KB).')
         sys.exit(1)
     print(f'OK: {destino} ({kb} KB, acceso {modo})')

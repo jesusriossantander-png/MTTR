@@ -156,19 +156,22 @@ def main():
     meses = {m: md for m, md in meses.items() if tiene_datos(md)}
 
     # 3) En taller: filas de IMPRESION con fecha de ingreso y sin egreso real.
+    #    La planilla espejo solo trae la hoja MTTR (agregados); si no hay
+    #    IMPRESION, el conteo "en taller" queda en 0 y el resto sigue igual.
     wip, wip_tipos = 0, {}
-    wsi = wb['IMPRESION']
-    for row in wsi.iter_rows(min_row=2, values_only=True):
-        if len(row) < 12:
-            continue
-        fing, real = row[3], row[6]
-        tag = str(row[0] or '').strip()
-        if not tag or fing is None or str(fing).strip() in ('', '-'):
-            continue
-        if real is None or str(real).strip() in ('', '-'):
-            tipo = str(row[11] or 'S/D').strip().upper() or 'S/D'
-            wip += 1
-            wip_tipos[tipo] = wip_tipos.get(tipo, 0) + 1
+    if 'IMPRESION' in wb.sheetnames:
+        wsi = wb['IMPRESION']
+        for row in wsi.iter_rows(min_row=2, values_only=True):
+            if len(row) < 12:
+                continue
+            fing, real = row[3], row[6]
+            tag = str(row[0] or '').strip()
+            if not tag or fing is None or str(fing).strip() in ('', '-'):
+                continue
+            if real is None or str(real).strip() in ('', '-'):
+                tipo = str(row[11] or 'S/D').strip().upper() or 'S/D'
+                wip += 1
+                wip_tipos[tipo] = wip_tipos.get(tipo, 0) + 1
 
     if len(meses) < 12:
         print(f'ERROR: solo {len(meses)} meses detectados; se aborta para no perder datos.')

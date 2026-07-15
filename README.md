@@ -11,7 +11,7 @@ Dashboard interactivo del tiempo medio de reparación (MTTR) del taller. Muestra
 | `index.html` | Dashboard interactivo (HTML + SVG autocontenido, sin dependencias externas) |
 | `data.js` | Valores de la hoja MTTR por mes y tipo de equipo (días y horas) |
 | `tools/parse_mttr.py` | Lee la hoja MTTR del xlsx exportado y genera `data.js` |
-| `.github/workflows/update-data.yml` | Actualización automática 2 veces por día desde la planilla |
+| `.github/workflows/update-data.yml` | Actualización automática 2 veces por día desde la planilla espejo |
 | `tunel.cmd` | Sirve el dashboard local y lo publica por túnel de Cloudflare |
 
 ## Qué muestra
@@ -24,12 +24,15 @@ Dashboard interactivo del tiempo medio de reparación (MTTR) del taller. Muestra
 
 El workflow de GitHub Actions descarga la planilla a las 06:00 y 18:00 (hora Argentina), regenera `data.js` y publica solo si hay cambios. También se puede ejecutar a mano desde **Actions → Run workflow**, o con el botón **⟳ Actualizar datos** del dashboard (protegido por clave; requiere la PC del taller encendida).
 
-**Acceso a la planilla:** si existe una credencial de cuenta de servicio de Google (secret `GOOGLE_SERVICE_ACCOUNT_JSON` en Actions, o `service-account.json` en la PC), la descarga es autenticada y la planilla puede estar restringida. Sin credencial, cae al enlace público de exportación.
+**Qué planilla se descarga:** el dashboard lee la **planilla espejo**, que contiene únicamente la hoja MTTR (agregados) traída por IMPORTRANGE — sin TAG, OT ni registros individuales. El **libro fax** completo, con los registros individuales, **no se comparte públicamente**; lo único que se comparte por enlace es la espejo.
+
+**Acceso a la planilla:** si existe una credencial de cuenta de servicio de Google (secret `GOOGLE_SERVICE_ACCOUNT_JSON` en Actions, o `service-account.json` en la PC), la descarga de la espejo es autenticada y puede estar restringida. Sin credencial, cae al enlace público de exportación (la espejo compartida como "cualquiera con el enlace puede ver").
 
 ## Seguridad
 
 - El endpoint `/actualizar` exige la clave de `clave-actualizar.txt` (header `X-Clave`); el servidor local solo sirve `index.html`, `data.js` y el logo — nunca `.git/` ni el código.
 - `.gitignore` impide subir la planilla o credenciales al repo.
+- La fuente de datos es la planilla **espejo** (solo la hoja MTTR, agregados); el libro fax con los registros individuales no se comparte por enlace.
 - `data.js` contiene únicamente los agregados de la hoja MTTR; ningún registro individual sale de la planilla.
 
 ## Túnel de Cloudflare (mttr.esimsrldesarrollos.com.ar)

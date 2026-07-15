@@ -43,7 +43,7 @@ def actualizar():
     with tempfile.TemporaryDirectory() as tmp:
         xlsx = os.path.join(tmp, 'planilla.xlsx')
         modo = descargar_planilla.descargar(xlsx)
-        if os.path.getsize(xlsx) < 300000:
+        if os.path.getsize(xlsx) < 50000:  # la espejo pesa ~130 KB; el login de Google, ~9 KB
             return {'ok': False, 'msg': 'La descarga de la planilla vino incompleta.'}
         print(f'planilla descargada (acceso {modo})')
         r = subprocess.run([sys.executable, os.path.join(RAIZ, 'tools', 'parse_mttr.py'),

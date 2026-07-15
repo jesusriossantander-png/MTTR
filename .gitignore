@@ -7,5 +7,6 @@ service-account.json
 clave-actualizar.txt
 
 # Temporales
+data_test.js
 __pycache__/
 *.pyc
